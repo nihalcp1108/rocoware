@@ -70,10 +70,6 @@ const createComplaint = async (req, res, next) => {
       cleanupUploadedFile();
       return res.status(400).json({ success: false, message: 'Model Number is required.' });
     }
-    if (!purchaseDate) {
-      cleanupUploadedFile();
-      return res.status(400).json({ success: false, message: 'Purchase Date is required.' });
-    }
 
     // Validate Sanitary Ware Complaint Name
     if (!complaintName || !complaintName.trim() || complaintName === 'Select Complaint Name') {
@@ -137,7 +133,7 @@ const createComplaint = async (req, res, next) => {
 
       // Product details
       modelNumber: modelNumber.trim(),
-      purchaseDate: new Date(purchaseDate),
+      purchaseDate: purchaseDate ? new Date(purchaseDate) : null,
 
       // Sanitary ware complaint details
       complaintName: complaintName.trim(),
@@ -463,6 +459,50 @@ const exportCompletedComplaintsPDF = async (req, res, next) => {
   }
 };
 
+// @desc    Search unique shop names and details for autocomplete suggestions
+// @route   GET /api/complaints/shops/search
+// @access  Private
+const searchShops = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    if (!q || !q.trim() || q.trim().length < 2) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const searchRegex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+    const complaints = await Complaint.find({ shopName: searchRegex })
+      .sort({ registeredAt: -1, createdAt: -1 })
+      .select('shopName address mobileNumber1 mobileNumber2 registeredAt')
+      .limit(50)
+      .lean();
+
+    const uniqueShopsMap = new Map();
+    for (const item of complaints) {
+      if (!item.shopName) continue;
+      const key = item.shopName.trim().toLowerCase();
+      if (!uniqueShopsMap.has(key)) {
+        uniqueShopsMap.set(key, {
+          shopName: item.shopName.trim(),
+          address: item.address ? item.address.trim() : '',
+          mobileNumber1: item.mobileNumber1 ? item.mobileNumber1.trim() : '',
+          mobileNumber2: item.mobileNumber2 ? item.mobileNumber2.trim() : '',
+        });
+      }
+      if (uniqueShopsMap.size >= 10) break;
+    }
+
+    const results = Array.from(uniqueShopsMap.values());
+
+    res.status(200).json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createComplaint,
   getRegisteredComplaints,
@@ -472,4 +512,5 @@ module.exports = {
   markComplaintCompleted,
   deleteComplaint,
   exportCompletedComplaintsPDF,
+  searchShops,
 };

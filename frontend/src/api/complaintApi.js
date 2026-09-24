@@ -46,4 +46,11 @@ export const complaintApi = {
     });
     return response;
   },
+
+  searchShops: async (query) => {
+    const response = await api.get('/complaints/shops/search', {
+      params: { q: query },
+    });
+    return response.data;
+  },
 };

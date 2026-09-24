@@ -40,20 +40,35 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+
+    if (!trimmedEmail && !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide both email and password.',
+        message: 'Please enter your email and password',
       });
     }
 
-    const trimmedEmail = email.trim().toLowerCase();
-    const admin = await Admin.findOne({ email: trimmedEmail });
+    if (!trimmedEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter your email',
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter your password',
+      });
+    }
+
+    const admin = await Admin.findOne({ email: trimmedEmail.toLowerCase() });
 
     if (!admin) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password.',
+        message: 'Email is incorrect',
       });
     }
 
@@ -61,7 +76,7 @@ const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password.',
+        message: 'Password is incorrect',
       });
     }
 

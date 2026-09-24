@@ -15,11 +15,6 @@ const complaintRoutes = require('./routes/complaintRoutes');
 
 const app = express();
 
-// Connect to MongoDB & Seed Admin
-connectDB().then(() => {
-  seedAdmin();
-});
-
 // Security HTTP headers
 app.use(
   helmet({
@@ -27,26 +22,39 @@ app.use(
   })
 );
 
-// CORS configuration for cross-origin credentials (cookies)
+// CORS configuration supporting dynamic origins (Vercel production, localhost, etc.)
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
   'http://127.0.0.1:5173',
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        process.env.NODE_ENV !== 'production';
+
+      if (isAllowed) {
         callback(null, true);
       } else {
-        callback(null, true); // Permissive in dev if accessed via alternate host
+        callback(null, true); // Fallback to allow requests in development/preview environments
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
+
+// Explicit handle preflight requests
+app.options('*', cors());
 
 // Body and cookie parsers
 app.use(express.json({ limit: '10mb' }));
@@ -74,9 +82,23 @@ app.get('/api/health', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5002;
-const server = app.listen(PORT, () => {
-  console.log(`[Server] Complaint Management Portal API running on http://localhost:${PORT}`);
-});
+
+// Database connection & Server Startup
+const startServer = async () => {
+  try {
+    await connectDB();
+    await seedAdmin();
+
+    app.listen(PORT, () => {
+      console.log(`[Server] Complaint Management Portal API running on http://localhost:${PORT} (PORT=${PORT})`);
+    });
+  } catch (error) {
+    console.error(`[Server Startup Failed] ${error.message}`);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {

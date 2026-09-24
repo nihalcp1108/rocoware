@@ -1,7 +1,20 @@
 import axios from 'axios';
 
+// Resolve base URL safely without duplicate /api prefixes
+const getBaseURL = () => {
+  const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (!envUrl) {
+    return '/api';
+  }
+  const cleanUrl = envUrl.replace(/\/+$/, '');
+  if (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) {
+    return `${cleanUrl}/api`;
+  }
+  return cleanUrl;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: getBaseURL(),
   withCredentials: true, // Send HTTP-only cookies automatically
   headers: {
     'Content-Type': 'application/json',
@@ -24,10 +37,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      'An unexpected error occurred. Please try again.';
+    let message;
+    if (error.response) {
+      if (error.response.status >= 500) {
+        message = 'Something went wrong. Please try again.';
+      } else {
+        message =
+          error.response.data?.message ||
+          'Something went wrong. Please try again.';
+      }
+    } else {
+      // Network error, hostname not resolved, or server offline
+      message = 'Unable to connect to the server. Please try again.';
+    }
     
     // Enrich error with friendly message
     error.friendlyMessage = message;

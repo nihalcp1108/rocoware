@@ -24,19 +24,21 @@ export const LoginPage = () => {
     setErrorMessage('');
 
     const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setErrorMessage('Please enter your portal email.');
+    const hasEmail = Boolean(trimmedEmail);
+    const hasPassword = Boolean(password);
+
+    if (!hasEmail && !hasPassword) {
+      setErrorMessage('Please enter your email and password');
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setErrorMessage('Please enter a valid email address.');
+    if (!hasEmail) {
+      setErrorMessage('Please enter your email');
       return;
     }
 
-    if (!password) {
-      setErrorMessage('Please enter your portal password.');
+    if (!hasPassword) {
+      setErrorMessage('Please enter your password');
       return;
     }
 
@@ -46,7 +48,7 @@ export const LoginPage = () => {
       toast.success('Welcome back! Successfully authenticated.');
       navigate('/app/complaints');
     } catch (err) {
-      const msg = err.friendlyMessage || err.message || 'Invalid login credentials.';
+      const msg = err.friendlyMessage || err.message || 'Something went wrong. Please try again.';
       setErrorMessage(msg);
       toast.error(msg);
     } finally {
@@ -90,7 +92,7 @@ export const LoginPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             {/* Email field */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">

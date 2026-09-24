@@ -56,7 +56,7 @@ const complaintSchema = new mongoose.Schema(
     },
     purchaseDate: {
       type: Date,
-      required: [true, 'Purchase date is required'],
+      default: null,
     },
 
     // Sanitary ware complaint details
