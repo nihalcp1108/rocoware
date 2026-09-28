@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   AlertCircle,
 } from 'lucide-react';
+import { getComplaintImageUrl } from '../../utils/imageUrl';
 
 export const ComplaintDetailsModal = ({
   isOpen,
@@ -42,7 +43,7 @@ export const ComplaintDetailsModal = ({
   if (!isOpen || !complaint) return null;
 
   const isCompleted = complaint.status === 'COMPLETED';
-  const imgUrl = complaint.imageUrl || complaint.complaintImage;
+  const imgUrl = getComplaintImageUrl(complaint.imageUrl || complaint.complaintImage);
 
   // Format date helper
   const formatDate = (dateVal) => {

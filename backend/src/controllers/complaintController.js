@@ -34,7 +34,7 @@ const createComplaint = async (req, res, next) => {
     } = req.body;
 
     const cleanupUploadedFile = () => {
-      if (req.file && fs.existsSync(req.file.path)) {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
         try {
           fs.unlinkSync(req.file.path);
         } catch (err) {}
@@ -92,27 +92,15 @@ const createComplaint = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Registered Person Name is required.' });
     }
 
-    // Handle optional image upload
+    // Handle optional image upload directly to Cloudinary via buffer
     let imageUrl = '';
     let imagePublicId = '';
 
     if (req.file) {
-      if (isCloudinaryConfigured) {
-        try {
-          const uploadRes = await uploadToCloudinary(req.file.path);
-          if (uploadRes) {
-            imageUrl = uploadRes.url;
-            imagePublicId = uploadRes.publicId;
-          }
-        } catch (uploadErr) {
-          console.warn('[Upload Warning] Cloudinary upload failed, using local storage fallback:', uploadErr.message);
-          imageUrl = `/uploads/${req.file.filename}`;
-          imagePublicId = req.file.filename;
-        }
-      } else {
-        // Fallback to local server upload URL
-        imageUrl = `/uploads/${req.file.filename}`;
-        imagePublicId = req.file.filename;
+      const uploadRes = await uploadToCloudinary(req.file.buffer, 'rocoware/complaints');
+      if (uploadRes) {
+        imageUrl = uploadRes.url;
+        imagePublicId = uploadRes.publicId;
       }
     }
 
@@ -159,7 +147,7 @@ const createComplaint = async (req, res, next) => {
       data: complaint,
     });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
       try {
         fs.unlinkSync(req.file.path);
       } catch (err) {}
@@ -408,7 +396,7 @@ const deleteComplaint = async (req, res, next) => {
 
     // Clean up file if attached
     if (complaint.imagePublicId) {
-      if (isCloudinaryConfigured && complaint.imageUrl.includes('cloudinary')) {
+      if (isCloudinaryConfigured() && complaint.imageUrl && complaint.imageUrl.includes('cloudinary')) {
         await deleteFromCloudinary(complaint.imagePublicId);
       } else {
         const localPath = path.join(__dirname, '../../uploads', complaint.imagePublicId);
