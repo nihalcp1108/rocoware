@@ -19,6 +19,8 @@ if (isCloudinaryConfigured()) {
   console.log('[Storage] Cloudinary environment variables missing or incomplete.');
 }
 
+const { Readable } = require('stream');
+
 const uploadToCloudinary = (fileBuffer, folder = 'rocoware/complaints') => {
   return new Promise((resolve, reject) => {
     if (!isCloudinaryConfigured()) {
@@ -46,8 +48,12 @@ const uploadToCloudinary = (fileBuffer, folder = 'rocoware/complaints') => {
       },
       (error, result) => {
         if (error) {
-          console.error('[Image Upload] Upload failed:', error.message);
+          console.error('[Image Upload] Upload failed:', error.message || error);
           return reject(error);
+        }
+        if (!result || !result.secure_url) {
+          console.error('[Image Upload] Upload failed: No secure_url returned');
+          return reject(new Error('Cloudinary did not return a valid secure URL.'));
         }
         console.log('[Image Upload] Cloudinary upload successful');
         console.log('[Image Upload] URL:', result.secure_url);
@@ -58,7 +64,12 @@ const uploadToCloudinary = (fileBuffer, folder = 'rocoware/complaints') => {
       }
     );
 
-    uploadStream.end(fileBuffer);
+    uploadStream.on('error', (streamErr) => {
+      console.error('[Image Upload Stream Error]', streamErr.message || streamErr);
+      reject(streamErr);
+    });
+
+    Readable.from(fileBuffer).pipe(uploadStream);
   });
 };
 

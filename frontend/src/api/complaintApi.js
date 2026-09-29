@@ -22,11 +22,7 @@ export const complaintApi = {
   },
 
   create: async (formData) => {
-    const response = await api.post('/complaints', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post('/complaints', formData);
     return response.data;
   },
 

@@ -18,6 +18,14 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Handle Busboy/Multer Multipart boundary errors
+  if (err.message && (err.message.includes('Boundary') || err.message.includes('boundary') || err.message.includes('Multipart'))) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid multipart form data boundary. Please re-select the file and try again.',
+    });
+  }
+
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = `Resource not found with id: ${err.value}`;

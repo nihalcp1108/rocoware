@@ -18,6 +18,7 @@ const isValidPhone = (phone) => {
 // @access  Private
 const createComplaint = async (req, res, next) => {
   try {
+    console.log('[Complaint] Request received');
     const {
       // Customer & Complaint information
       customerName,
@@ -97,13 +98,19 @@ const createComplaint = async (req, res, next) => {
     let imagePublicId = '';
 
     if (req.file) {
+      console.log(`[Complaint] File received: ${req.file.originalname} (${req.file.size} bytes)`);
+      console.log('[Complaint] Uploading image to Cloudinary');
       const uploadRes = await uploadToCloudinary(req.file.buffer, 'rocoware/complaints');
       if (uploadRes) {
         imageUrl = uploadRes.url;
         imagePublicId = uploadRes.publicId;
+        console.log('[Complaint] Cloudinary upload successful');
       }
+    } else {
+      console.log('[Complaint] No file attached to request');
     }
 
+    console.log('[Complaint] Saving complaint');
     // Generate unique complaint ID (e.g. CMP-2026-0001)
     const complaintId = await generateComplaintId();
 
@@ -141,12 +148,15 @@ const createComplaint = async (req, res, next) => {
       completedAt: null,
     });
 
+    console.log(`[Complaint] Complaint saved successfully with ID: ${complaint.complaintId}`);
+
     res.status(201).json({
       success: true,
       message: 'Complaint registered successfully.',
       data: complaint,
     });
   } catch (error) {
+    console.error('[Complaint Upload Error]', error.message || error);
     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
       try {
         fs.unlinkSync(req.file.path);

@@ -39,13 +39,11 @@ api.interceptors.response.use(
   (error) => {
     let message;
     if (error.response) {
-      if (error.response.status >= 500) {
-        message = 'Something went wrong. Please try again.';
-      } else {
-        message =
-          error.response.data?.message ||
-          'Something went wrong. Please try again.';
-      }
+      message =
+        error.response.data?.message ||
+        (error.response.status >= 500
+          ? 'Server error occurred. Please check server logs.'
+          : 'Something went wrong. Please try again.');
     } else {
       // Network error, hostname not resolved, or server offline
       message = 'Unable to connect to the server. Please try again.';
