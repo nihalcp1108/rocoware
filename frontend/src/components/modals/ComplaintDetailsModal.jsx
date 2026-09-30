@@ -25,6 +25,11 @@ export const ComplaintDetailsModal = ({
   onCompleteClick,
 }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [complaint]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -43,7 +48,7 @@ export const ComplaintDetailsModal = ({
   if (!isOpen || !complaint) return null;
 
   const isCompleted = complaint.status === 'COMPLETED';
-  const imgUrl = getComplaintImageUrl(complaint.imageUrl || complaint.complaintImage);
+  const imgUrl = getComplaintImageUrl(complaint.image || complaint.imageUrl || complaint.complaintImage);
 
   // Format date helper
   const formatDate = (dateVal) => {
@@ -266,25 +271,41 @@ export const ComplaintDetailsModal = ({
                 {/* Complaint Image */}
                 <div>
                   <span className="text-slate-400 block font-medium mb-1.5">Complaint Image</span>
-                  {imgUrl ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={imgUrl}
-                        alt="Complaint"
-                        onClick={() => setImageModalOpen(true)}
-                        className="h-28 w-28 object-cover rounded-xl border border-slate-200 cursor-pointer hover:opacity-90 transition-opacity shadow-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setImageModalOpen(true)}
-                        className="absolute bottom-1.5 right-1.5 bg-black/60 text-white p-1 rounded-md hover:bg-black/80 transition-colors"
-                        title="View full image"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
+                  {imgUrl && !imageLoadError ? (
+                    <div className="space-y-1.5">
+                      <div className="relative inline-block group">
+                        <img
+                          src={imgUrl}
+                          alt="Complaint Attachment"
+                          onError={() => setImageLoadError(true)}
+                          onClick={() => setImageModalOpen(true)}
+                          className="h-28 w-28 sm:h-32 sm:w-32 object-contain bg-slate-900/5 rounded-xl border border-slate-200 cursor-pointer hover:opacity-95 transition-opacity shadow-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setImageModalOpen(true)}
+                          className="absolute bottom-1.5 right-1.5 bg-black/60 hover:bg-black/80 text-white p-1 rounded-md transition-colors cursor-pointer"
+                          title="View larger image"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setImageModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 text-xs text-brand-600 hover:text-brand-700 font-semibold cursor-pointer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>View larger image</span>
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <p className="text-slate-400 italic">No image uploaded.</p>
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-100/70 border border-slate-200/60 text-slate-500 text-xs w-fit">
+                      <ImageIcon className="w-4 h-4 text-slate-400" />
+                      <span>No attachment</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -410,19 +431,26 @@ export const ComplaintDetailsModal = ({
 
       {/* Full Image Preview Modal */}
       {imageModalOpen && imgUrl && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
-          <div className="relative max-w-3xl max-h-[90vh] flex flex-col items-center">
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs cursor-pointer"
+          onClick={() => setImageModalOpen(false)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => setImageModalOpen(false)}
               className="absolute -top-10 right-0 text-white hover:text-slate-300 p-1 cursor-pointer"
+              title="Close preview"
             >
               <X className="w-6 h-6" />
             </button>
             <img
               src={imgUrl}
               alt="Complaint Full Preview"
-              className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl"
+              className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl bg-black/40"
             />
           </div>
         </div>

@@ -22,7 +22,11 @@ export const complaintApi = {
   },
 
   create: async (formData) => {
-    const response = await api.post('/complaints', formData);
+    const response = await api.post('/complaints', formData, {
+      headers: {
+        'Content-Type': undefined,
+      },
+    });
     return response.data;
   },
 

@@ -13,6 +13,23 @@ const isValidPhone = (phone) => {
   return digitsOnly.length >= 7 && digitsOnly.length <= 15;
 };
 
+// Response normalization helper: guarantees image, imageUrl, and complaintImage are always available
+const formatComplaintResponse = (doc) => {
+  if (!doc) return doc;
+  const obj = typeof doc.toObject === 'function' ? doc.toObject({ virtuals: true }) : { ...doc };
+  const secureUrl = obj.image || obj.imageUrl || '';
+  obj.image = secureUrl;
+  obj.imageUrl = secureUrl;
+  obj.complaintImage = secureUrl;
+  if (!obj.servicePersonPhone && obj.servicePersonNumber) {
+    obj.servicePersonPhone = obj.servicePersonNumber;
+  }
+  if (!obj.servicePersonNumber && obj.servicePersonPhone) {
+    obj.servicePersonNumber = obj.servicePersonPhone;
+  }
+  return obj;
+};
+
 // @desc    Register a new complaint (Customer & Complaint information only)
 // @route   POST /api/complaints
 // @access  Private
@@ -97,14 +114,14 @@ const createComplaint = async (req, res, next) => {
     let imageUrl = '';
     let imagePublicId = '';
 
-    if (req.file) {
+    if (req.file && req.file.buffer) {
       console.log(`[Complaint] File received: ${req.file.originalname} (${req.file.size} bytes)`);
       console.log('[Complaint] Uploading image to Cloudinary');
       const uploadRes = await uploadToCloudinary(req.file.buffer, 'rocoware/complaints');
       if (uploadRes) {
         imageUrl = uploadRes.url;
         imagePublicId = uploadRes.publicId;
-        console.log('[Complaint] Cloudinary upload successful');
+        console.log('[Complaint] Cloudinary upload successful. URL:', imageUrl);
       }
     } else {
       console.log('[Complaint] No file attached to request');
@@ -134,7 +151,8 @@ const createComplaint = async (req, res, next) => {
       complaintName: complaintName.trim(),
       otherProductName: complaintName.trim() === 'Other' && otherProductName ? otherProductName.trim() : '',
       complaintDetails: complaintDetails.trim(),
-      imageUrl,
+      image: imageUrl,
+      imageUrl: imageUrl,
       imagePublicId,
       registeredPersonName: registeredPersonName.trim(),
 
@@ -153,7 +171,7 @@ const createComplaint = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Complaint registered successfully.',
-      data: complaint,
+      data: formatComplaintResponse(complaint),
     });
   } catch (error) {
     console.error('[Complaint Upload Error]', error.message || error);
@@ -211,7 +229,7 @@ const getRegisteredComplaints = async (req, res, next) => {
     res.status(200).json({
       success: true,
       count: complaints.length,
-      data: complaints,
+      data: complaints.map(formatComplaintResponse),
     });
   } catch (error) {
     next(error);
@@ -262,7 +280,7 @@ const getCompletedComplaints = async (req, res, next) => {
     res.status(200).json({
       success: true,
       count: complaints.length,
-      data: complaints,
+      data: complaints.map(formatComplaintResponse),
     });
   } catch (error) {
     next(error);
@@ -308,7 +326,7 @@ const getComplaintById = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: complaint,
+      data: formatComplaintResponse(complaint),
     });
   } catch (error) {
     next(error);
@@ -323,21 +341,23 @@ const markComplaintCompleted = async (req, res, next) => {
     const {
       servicePersonName,
       servicePersonNumber,
+      servicePersonPhone,
       attendedDate,
       billAmount,
       remarks,
+      registeredPersonName,
     } = req.body;
 
-    const complaint = await Complaint.findById(req.params.id);
+    const existing = await Complaint.findById(req.params.id);
 
-    if (!complaint) {
+    if (!existing) {
       return res.status(404).json({
         success: false,
         message: 'Complaint not found.',
       });
     }
 
-    if (complaint.status === 'COMPLETED') {
+    if (existing.status === 'COMPLETED') {
       return res.status(400).json({
         success: false,
         message: 'Complaint is already marked as completed.',
@@ -349,10 +369,11 @@ const markComplaintCompleted = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Service Person Name is required.' });
     }
 
-    if (!servicePersonNumber || !servicePersonNumber.trim()) {
+    const effectivePhone = (servicePersonNumber || servicePersonPhone || '').trim();
+    if (!effectivePhone) {
       return res.status(400).json({ success: false, message: 'Service Person Number is required.' });
     }
-    if (!isValidPhone(servicePersonNumber.trim())) {
+    if (!isValidPhone(effectivePhone)) {
       return res.status(400).json({ success: false, message: 'Please provide a valid Service Person Number.' });
     }
 
@@ -368,22 +389,38 @@ const markComplaintCompleted = async (req, res, next) => {
       });
     }
 
-    // Update Service Details and mark as COMPLETED
-    complaint.servicePersonName = servicePersonName.trim();
-    complaint.servicePersonNumber = servicePersonNumber.trim();
-    complaint.attendedDate = new Date(attendedDate);
-    complaint.billAmount = parsedBillAmount;
-    complaint.remarks = remarks ? remarks.trim() : '';
-    complaint.status = 'COMPLETED';
-    complaint.completedAt = new Date(); // Authoritative automatic backend completion timestamp
+    // Preserve existing image values permanently
+    const currentImage = existing.image || existing.imageUrl || '';
+    const currentPublicId = existing.imagePublicId || '';
 
-    // Ensure registeredAt and complaintId remain untouched
-    await complaint.save();
+    const updateFields = {
+      servicePersonName: servicePersonName.trim(),
+      servicePersonNumber: effectivePhone,
+      attendedDate: new Date(attendedDate),
+      billAmount: parsedBillAmount,
+      remarks: remarks ? remarks.trim() : '',
+      status: 'COMPLETED',
+      completedAt: new Date(),
+      image: currentImage,
+      imageUrl: currentImage,
+      imagePublicId: currentPublicId,
+    };
+
+    if (registeredPersonName && registeredPersonName.trim()) {
+      updateFields.registeredPersonName = registeredPersonName.trim();
+    }
+
+    // Safe atomic update using $set to guarantee all existing registration fields & image remain untouched
+    const updatedComplaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
 
     res.status(200).json({
       success: true,
       message: 'Complaint completed successfully.',
-      data: complaint,
+      data: formatComplaintResponse(updatedComplaint),
     });
   } catch (error) {
     next(error);
@@ -405,8 +442,9 @@ const deleteComplaint = async (req, res, next) => {
     }
 
     // Clean up file if attached
+    const imageToDelete = complaint.image || complaint.imageUrl || '';
     if (complaint.imagePublicId) {
-      if (isCloudinaryConfigured() && complaint.imageUrl && complaint.imageUrl.includes('cloudinary')) {
+      if (isCloudinaryConfigured() && imageToDelete && imageToDelete.includes('cloudinary')) {
         await deleteFromCloudinary(complaint.imagePublicId);
       } else {
         const localPath = path.join(__dirname, '../../uploads', complaint.imagePublicId);

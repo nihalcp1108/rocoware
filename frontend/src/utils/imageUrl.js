@@ -5,11 +5,15 @@
  * - Handles missing/empty image URLs gracefully
  */
 export const getComplaintImageUrl = (imagePath) => {
-  if (!imagePath || typeof imagePath !== 'string') return '';
+  if (!imagePath) return '';
+  if (typeof imagePath === 'object' && imagePath.url) {
+    imagePath = imagePath.url;
+  }
+  if (typeof imagePath !== 'string') return '';
   const trimmed = imagePath.trim();
   if (!trimmed) return '';
 
-  // Cloudinary / full external HTTP or HTTPS URLs
+  // Cloudinary / full external HTTP or HTTPS URLs (used directly)
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
   }

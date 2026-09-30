@@ -16,14 +16,16 @@ const getBaseURL = () => {
 const api = axios.create({
   baseURL: getBaseURL(),
   withCredentials: true, // Send HTTP-only cookies automatically
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Request interceptor: attach token as Bearer header if stored locally (dual persistence)
+// Request interceptor: attach token and ensure FormData boundary is never overridden
 api.interceptors.request.use(
   (config) => {
+    // If request data is FormData, remove Content-Type so browser sets proper multipart boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
     const token = localStorage.getItem('cp_auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

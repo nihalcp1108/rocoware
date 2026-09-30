@@ -292,9 +292,20 @@ export const RegisteredComplaintsPage = () => {
                     <tr key={item._id} className="hover:bg-slate-50/70 transition-colors">
                       {/* 1. Complaint ID */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2 py-0.5 rounded-lg border border-slate-200">
-                          {item.complaintId}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2 py-0.5 rounded-lg border border-slate-200">
+                            {item.complaintId}
+                          </span>
+                          {(item.image || item.imageUrl) && (
+                            <span
+                              title="Image Attached - Click View to see"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200"
+                            >
+                              <ImageIcon className="w-3 h-3 text-brand-600" />
+                              <span className="hidden 2xl:inline">Image</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* 2. Registered Date & Time */}
@@ -409,9 +420,17 @@ export const RegisteredComplaintsPage = () => {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
-                    <span className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 inline-block">
-                      {item.complaintId}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 inline-block">
+                        {item.complaintId}
+                      </span>
+                      {(item.image || item.imageUrl) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-200">
+                          <ImageIcon className="w-3 h-3 text-brand-600" />
+                          <span>Image</span>
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 text-xs text-slate-500">
                       <Clock className="w-3 h-3 text-slate-400" />
                       <span>{formatDateTime(item.registeredAt || item.createdAt)}</span>

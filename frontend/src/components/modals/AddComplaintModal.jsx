@@ -194,18 +194,21 @@ export const AddComplaintModal = ({ isOpen, onClose, onSuccess }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, image: 'Image size must be less than 5MB.' }));
+    // Validate size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, image: 'Image size must be less than 10MB.' }));
       return;
     }
 
-    // Validate type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
+    // Validate type & extension
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = file.name ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase() : '';
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/x-png', 'image/webp'];
+
+    if (!validTypes.includes(file.type?.toLowerCase()) && !validExtensions.includes(ext)) {
       setErrors((prev) => ({
         ...prev,
-        image: 'Only JPG, PNG, and WEBP image formats are supported.',
+        image: 'Only JPG, JPEG, PNG, and WEBP image formats are supported.',
       }));
       return;
     }
@@ -765,7 +768,7 @@ export const AddComplaintModal = ({ isOpen, onClose, onSuccess }) => {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/jpg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                     className="hidden"
                     onChange={handleFileChange}
                   />
@@ -776,7 +779,7 @@ export const AddComplaintModal = ({ isOpen, onClose, onSuccess }) => {
                     Click to upload product image
                   </p>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Supports JPG, PNG, WEBP up to 5MB
+                    Supports JPG, JPEG, PNG, WEBP up to 10MB
                   </p>
                 </div>
               ) : (
@@ -807,7 +810,7 @@ export const AddComplaintModal = ({ isOpen, onClose, onSuccess }) => {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                       className="hidden"
                       onChange={handleFileChange}
                     />

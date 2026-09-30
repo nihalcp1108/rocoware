@@ -160,8 +160,9 @@ const generateCompletedComplaintsPDF = (complaints, stream) => {
     doc.font('Helvetica').fillColor('#475569').text('Bill Amount:', 46, currentY);
     doc.fillColor('#0f172a').font('Helvetica-Bold').text(formattedBill, 125, currentY);
 
+    const hasAttachment = Boolean(item.image || item.imageUrl);
     doc.font('Helvetica').fillColor('#475569').text('Attachment:', 310, currentY);
-    doc.fillColor(item.imageUrl ? '#2563eb' : '#64748b').text(item.imageUrl ? 'Image Attached' : 'No image', 380, currentY);
+    doc.fillColor(hasAttachment ? '#2563eb' : '#64748b').text(hasAttachment ? 'Image Attached' : 'No image', 380, currentY);
     currentY += 13;
 
     if (item.remarks) {

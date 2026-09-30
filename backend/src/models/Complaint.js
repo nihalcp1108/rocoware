@@ -75,6 +75,10 @@ const complaintSchema = new mongoose.Schema(
       required: [true, 'Complaint details are required'],
       trim: true,
     },
+    image: {
+      type: String,
+      default: '',
+    },
     imageUrl: {
       type: String,
       default: '',
@@ -132,9 +136,22 @@ const complaintSchema = new mongoose.Schema(
   }
 );
 
+// Pre-save middleware to keep image and imageUrl strictly in sync
+complaintSchema.pre('save', function (next) {
+  const finalImage = this.image || this.imageUrl || '';
+  this.image = finalImage;
+  this.imageUrl = finalImage;
+  next();
+});
+
 // Virtual for complaintImage to match API naming seamlessly
 complaintSchema.virtual('complaintImage').get(function () {
-  return this.imageUrl;
+  return this.image || this.imageUrl || '';
+});
+
+// Virtual for servicePersonPhone to match service person phone naming seamlessly
+complaintSchema.virtual('servicePersonPhone').get(function () {
+  return this.servicePersonNumber || '';
 });
 
 // Text indexing for fast search
