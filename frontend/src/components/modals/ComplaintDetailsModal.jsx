@@ -15,6 +15,8 @@ import {
   IndianRupee,
   ShieldCheck,
   AlertCircle,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 import { getComplaintImageUrl } from '../../utils/imageUrl';
 
@@ -23,6 +25,8 @@ export const ComplaintDetailsModal = ({
   complaint,
   onClose,
   onCompleteClick,
+  onDownloadPDF,
+  isDownloadingPDF,
 }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
@@ -417,7 +421,30 @@ export const ComplaintDetailsModal = ({
           </div>
 
           {/* Footer */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end flex-shrink-0">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between flex-shrink-0">
+            {isCompleted && onDownloadPDF ? (
+              <button
+                type="button"
+                onClick={() => onDownloadPDF(complaint)}
+                disabled={isDownloadingPDF}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDownloadingPDF ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Downloading PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-4 h-4" />
+                    <span>Download PDF</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div />
+            )}
+
             <button
               type="button"
               onClick={onClose}

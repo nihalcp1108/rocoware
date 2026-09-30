@@ -47,6 +47,13 @@ export const complaintApi = {
     return response;
   },
 
+  downloadIndividualPDF: async (id) => {
+    const response = await api.get(`/complaints/${id}/pdf`, {
+      responseType: 'blob',
+    });
+    return response;
+  },
+
   searchShops: async (query) => {
     const response = await api.get('/complaints/shops/search', {
       params: { q: query },

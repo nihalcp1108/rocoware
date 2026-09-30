@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const Complaint = require('../models/Complaint');
 const { generateComplaintId } = require('../utils/idGenerator');
-const { generateCompletedComplaintsPDF } = require('../utils/pdfGenerator');
+const { generateCompletedComplaintsPDF, generateSingleComplaintPDF } = require('../utils/pdfGenerator');
 const { uploadToCloudinary, deleteFromCloudinary, isCloudinaryConfigured } = require('../config/cloudinary');
 
 // Phone validation helper
@@ -495,6 +495,43 @@ const exportCompletedComplaintsPDF = async (req, res, next) => {
   }
 };
 
+// Helper to sanitize strings for content-disposition filenames
+const sanitizeForFilename = (str) => {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
+
+// @desc    Export individual completed complaint as PDF
+// @route   GET /api/complaints/:id/pdf
+// @access  Private
+const exportSingleComplaintPDF = async (req, res, next) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id).lean();
+
+    if (!complaint) {
+      return res.status(404).json({
+        success: false,
+        message: 'Complaint not found.',
+      });
+    }
+
+    const customerPart = sanitizeForFilename(complaint.customerName) || 'Customer';
+    const modelPart = sanitizeForFilename(complaint.modelNumber || complaint.complaintId) || 'Model';
+    const filename = `Complaint_${customerPart}_${modelPart}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    await generateSingleComplaintPDF(complaint, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Search unique shop names and details for autocomplete suggestions
 // @route   GET /api/complaints/shops/search
 // @access  Private
@@ -548,5 +585,6 @@ module.exports = {
   markComplaintCompleted,
   deleteComplaint,
   exportCompletedComplaintsPDF,
+  exportSingleComplaintPDF,
   searchShops,
 };

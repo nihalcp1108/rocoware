@@ -8,6 +8,7 @@ const {
   markComplaintCompleted,
   deleteComplaint,
   exportCompletedComplaintsPDF,
+  exportSingleComplaintPDF,
   searchShops,
 } = require('../controllers/complaintController');
 const { protect } = require('../middleware/authMiddleware');
@@ -27,6 +28,7 @@ router.post('/', upload.single('image'), createComplaint);
 router.get('/', getRegisteredComplaints);
 
 router.get('/:id', getComplaintById);
+router.get('/:id/pdf', exportSingleComplaintPDF);
 router.patch('/:id/complete', markComplaintCompleted);
 router.delete('/:id', deleteComplaint);
 

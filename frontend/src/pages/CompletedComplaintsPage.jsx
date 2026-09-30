@@ -27,6 +27,7 @@ export const CompletedComplaintsPage = () => {
   const [complaints, setComplaints] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -93,6 +94,50 @@ export const CompletedComplaintsPage = () => {
       toast.error(err.friendlyMessage || 'Failed to export PDF.');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // Individual PDF Download
+  const handleDownloadIndividualPDF = async (complaint) => {
+    if (!complaint || !complaint._id) return;
+
+    setDownloadingId(complaint._id);
+    try {
+      const response = await complaintApi.downloadIndividualPDF(complaint._id);
+
+      // Determine filename from response header or generate sanitized fallback
+      let filename = '';
+      const disposition = response.headers?.['content-disposition'];
+      if (disposition && disposition.includes('filename=')) {
+        const matches = disposition.match(/filename=["']?([^"';]+)["']?/);
+        if (matches && matches[1]) {
+          filename = matches[1];
+        }
+      }
+
+      if (!filename) {
+        const customerClean = (complaint.customerName || 'Customer').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        const modelClean = (complaint.modelNumber || complaint.complaintId || 'Model').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        filename = `Complaint_${customerClean}_${modelClean}.pdf`;
+      }
+
+      // Create blob link and trigger download
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      const fileURL = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = fileURL;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(fileURL);
+
+      toast.success(`PDF downloaded for ${complaint.complaintId}`);
+    } catch (err) {
+      console.error('Failed to download individual PDF', err);
+      toast.error(err.friendlyMessage || err.response?.data?.message || 'Failed to download complaint PDF.');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -355,9 +400,9 @@ export const CompletedComplaintsPage = () => {
                         </span>
                       </td>
 
-                      {/* Actions: View */}
+                      {/* Actions: View, PDF, Delete */}
                       <td className="px-3.5 py-3.5 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => handleView(item)}
@@ -366,6 +411,27 @@ export const CompletedComplaintsPage = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadIndividualPDF(item)}
+                            disabled={downloadingId === item._id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                            title="Download PDF"
+                          >
+                            {downloadingId === item._id ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Downloading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <FileDown className="w-3.5 h-3.5" />
+                                <span>PDF</span>
+                              </>
+                            )}
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => setDeleteTargetId(item._id)}
@@ -455,14 +521,34 @@ export const CompletedComplaintsPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => handleView(item)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" /> View Details
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadIndividualPDF(item)}
+                    disabled={downloadingId === item._id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {downloadingId === item._id ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Downloading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileDown className="w-3.5 h-3.5" />
+                        <span>Download PDF</span>
+                      </>
+                    )}
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setDeleteTargetId(item._id)}
@@ -482,6 +568,8 @@ export const CompletedComplaintsPage = () => {
       <ComplaintDetailsModal
         isOpen={isDetailsModalOpen}
         complaint={selectedComplaint}
+        onDownloadPDF={handleDownloadIndividualPDF}
+        isDownloadingPDF={downloadingId === selectedComplaint?._id}
         onClose={() => {
           setIsDetailsModalOpen(false);
           setSelectedComplaint(null);
