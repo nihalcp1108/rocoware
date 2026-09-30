@@ -26,6 +26,15 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Handle Cloudinary configuration errors
+  if (err.code === 'CLOUDINARY_NOT_CONFIGURED' || (err.message && err.message.includes('Cloudinary credentials are not configured'))) {
+    return res.status(500).json({
+      success: false,
+      code: 'CLOUDINARY_NOT_CONFIGURED',
+      message: err.message,
+    });
+  }
+
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = `Resource not found with id: ${err.value}`;

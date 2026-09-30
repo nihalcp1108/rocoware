@@ -71,10 +71,12 @@ app.use('/api/complaints', complaintRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const { getCloudinaryStatus } = require('./config/cloudinary');
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'Complaint Management Portal API',
+    cloudinary: getCloudinaryStatus(),
   });
 });
 
