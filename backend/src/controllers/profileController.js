@@ -1,5 +1,5 @@
-const Admin = require('../models/Admin');
-const { generateToken } = require('./authController');
+import Admin from '../models/Admin.js';
+import { generateToken } from './authController.js';
 
 // @desc    Update portal login email
 // @route   PUT /api/profile/email
@@ -146,7 +146,7 @@ const updatePassword = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   updateEmail,
   updatePassword,
 };

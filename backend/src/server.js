@@ -1,17 +1,22 @@
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
-const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
-const connectDB = require('./config/db');
-const seedAdmin = require('./utils/seedAdmin');
-const errorHandler = require('./middleware/errorHandler');
+import connectDB from './config/db.js';
+import seedAdmin from './utils/seedAdmin.js';
+import errorHandler from './middleware/errorHandler.js';
+import { getCloudinaryStatus } from './config/cloudinary.js';
 
-const authRoutes = require('./routes/authRoutes');
-const profileRoutes = require('./routes/profileRoutes');
-const complaintRoutes = require('./routes/complaintRoutes');
+import authRoutes from './routes/authRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
+import complaintRoutes from './routes/complaintRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -71,7 +76,6 @@ app.use('/api/complaints', complaintRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  const { getCloudinaryStatus } = require('./config/cloudinary');
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -107,4 +111,4 @@ process.on('unhandledRejection', (err) => {
   console.error('[Unhandled Rejection]', err.message);
 });
 
-module.exports = app;
+export default app;

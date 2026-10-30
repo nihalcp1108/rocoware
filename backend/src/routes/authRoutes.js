@@ -1,7 +1,7 @@
-const express = require('express');
-const rateLimit = require('express-rate-limit');
-const { login, logout, getMe } = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware');
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import { login, logout, getMe } from '../controllers/authController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -21,4 +21,4 @@ router.post('/login', loginLimiter, login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
 
-module.exports = router;
+export default router;

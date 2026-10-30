@@ -1,9 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const Complaint = require('../models/Complaint');
-const { generateComplaintId } = require('../utils/idGenerator');
-const { generateCompletedComplaintsPDF, generateSingleComplaintPDF } = require('../utils/pdfGenerator');
-const { uploadToCloudinary, deleteFromCloudinary, isCloudinaryConfigured } = require('../config/cloudinary');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import Complaint from '../models/Complaint.js';
+import { generateComplaintId } from '../utils/idGenerator.js';
+import { generateCompletedComplaintsPDF, generateSingleComplaintPDF } from '../utils/pdfGenerator.js';
+import { uploadToCloudinary, deleteFromCloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Phone validation helper
 const isValidPhone = (phone) => {
@@ -576,7 +580,7 @@ const searchShops = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   createComplaint,
   getRegisteredComplaints,
   getCompletedComplaints,

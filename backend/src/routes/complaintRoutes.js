@@ -1,5 +1,5 @@
-const express = require('express');
-const {
+import express from 'express';
+import {
   createComplaint,
   getRegisteredComplaints,
   getCompletedComplaints,
@@ -10,9 +10,9 @@ const {
   exportCompletedComplaintsPDF,
   exportSingleComplaintPDF,
   searchShops,
-} = require('../controllers/complaintController');
-const { protect } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
+} from '../controllers/complaintController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -32,4 +32,4 @@ router.get('/:id/pdf', exportSingleComplaintPDF);
 router.patch('/:id/complete', markComplaintCompleted);
 router.delete('/:id', deleteComplaint);
 
-module.exports = router;
+export default router;

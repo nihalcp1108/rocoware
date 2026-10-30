@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const Admin = require('../models/Admin');
+import jwt from 'jsonwebtoken';
+import Admin from '../models/Admin.js';
 
 const generateToken = (id, email, role) => {
   return jwt.sign(
@@ -127,7 +127,7 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   login,
   logout,
   getMe,

@@ -1,4 +1,4 @@
-const Complaint = require('../models/Complaint');
+import Complaint from '../models/Complaint.js';
 
 /**
  * Generate a unique Complaint ID in the format: CMP-YYYY-XXXX
@@ -40,4 +40,4 @@ const generateComplaintId = async () => {
   return uniqueId;
 };
 
-module.exports = { generateComplaintId };
+export { generateComplaintId };

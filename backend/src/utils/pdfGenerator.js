@@ -1,6 +1,6 @@
-const PDFDocument = require('pdfkit');
-const path = require('path');
-const fs = require('fs');
+import PDFDocument from 'pdfkit';
+
+
 
 /**
  * Safely fetches a remote image as a binary Buffer for PDFKit embedding.
@@ -462,7 +462,7 @@ const generateSingleComplaintPDF = async (complaint, stream) => {
   doc.end();
 };
 
-module.exports = {
+export {
   generateCompletedComplaintsPDF,
   generateSingleComplaintPDF,
 };

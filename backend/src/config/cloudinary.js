@@ -1,6 +1,6 @@
-require('dotenv').config();
-const cloudinary = require('cloudinary').v2;
-const { Readable } = require('stream');
+import 'dotenv/config';
+import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 
 /**
  * Clean environment variable strings:
@@ -156,7 +156,7 @@ const deleteFromCloudinary = async (publicId) => {
   }
 };
 
-module.exports = {
+export {
   isCloudinaryConfigured,
   applyCloudinaryConfig,
   getCloudinaryStatus,

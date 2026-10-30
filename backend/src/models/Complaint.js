@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const complaintSchema = new mongoose.Schema(
   {
@@ -169,4 +169,6 @@ complaintSchema.index({
   servicePersonNumber: 'text',
 });
 
-module.exports = mongoose.model('Complaint', complaintSchema);
+const Complaint = mongoose.model('Complaint', complaintSchema);
+
+export default Complaint;

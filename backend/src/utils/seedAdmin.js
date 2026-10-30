@@ -1,4 +1,4 @@
-const Admin = require('../models/Admin');
+import Admin from '../models/Admin.js';
 
 const DEFAULT_ADMIN_EMAIL = 'admin@complaintportal.com';
 const DEFAULT_ADMIN_PASSWORD = 'Complaint@123';
@@ -26,4 +26,4 @@ const seedAdmin = async () => {
   }
 };
 
-module.exports = seedAdmin;
+export default seedAdmin;
