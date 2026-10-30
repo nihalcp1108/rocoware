@@ -33,33 +33,35 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-].filter(Boolean);
+]
+  .filter(Boolean)
+  .map((url) => url.trim().replace(/\/+$/, ''));
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-      
-      const isAllowed =
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
-        process.env.NODE_ENV !== 'production';
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
 
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Fallback to allow requests in development/preview environments
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
+    const cleanOrigin = origin.trim().replace(/\/+$/, '');
+    const isAllowed =
+      allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.endsWith('.vercel.app') ||
+      cleanOrigin.endsWith('.railway.app') ||
+      process.env.NODE_ENV !== 'production';
 
-// Explicit handle preflight requests
-app.options('*', cors());
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback to allow requests in development/preview environments
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Body and cookie parsers
 app.use(express.json({ limit: '10mb' }));
@@ -95,8 +97,8 @@ const startServer = async () => {
     await connectDB();
     await seedAdmin();
 
-    app.listen(PORT, () => {
-      console.log(`[Server] Complaint Management Portal API running on http://localhost:${PORT} (PORT=${PORT})`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[Server] Complaint Management Portal API running on http://0.0.0.0:${PORT} (PORT=${PORT})`);
     });
   } catch (error) {
     console.error(`[Server Startup Failed] ${error.message}`);

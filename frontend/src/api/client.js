@@ -1,16 +1,27 @@
 import axios from 'axios';
 
 // Resolve base URL safely without duplicate /api prefixes
-const getBaseURL = () => {
-  const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
-  if (!envUrl) {
+export const getBaseURL = () => {
+  const rawEnv = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  // If empty, root slash, or /api, default safely to relative '/api'
+  if (!rawEnv || rawEnv === '/' || rawEnv === '/api' || rawEnv === 'api') {
     return '/api';
   }
-  const cleanUrl = envUrl.replace(/\/+$/, '');
-  if (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) {
-    return `${cleanUrl}/api`;
+
+  // Strip trailing slashes
+  const cleanUrl = rawEnv.replace(/\/+$/, '');
+
+  if (!cleanUrl) {
+    return '/api';
   }
-  return cleanUrl;
+
+  // Ensure /api suffix without duplication
+  if (cleanUrl.endsWith('/api')) {
+    return cleanUrl;
+  }
+
+  return `${cleanUrl}/api`;
 };
 
 const api = axios.create({
@@ -41,14 +52,18 @@ api.interceptors.response.use(
   (error) => {
     let message;
     if (error.response) {
-      message =
-        error.response.data?.message ||
-        (error.response.status >= 500
-          ? 'Server error occurred. Please check server logs.'
-          : 'Something went wrong. Please try again.');
+      if (error.response.status === 405) {
+        message = 'HTTP 405: Method Not Allowed. The server or endpoint does not accept this request method. Check API configuration.';
+      } else {
+        message =
+          error.response.data?.message ||
+          (error.response.status >= 500
+            ? 'Server error occurred. Please check server logs.'
+            : 'Something went wrong. Please try again.');
+      }
     } else {
       // Network error, hostname not resolved, or server offline
-      message = 'Unable to connect to the server. Please try again.';
+      message = 'Unable to connect to the server. Please verify your internet connection and backend status.';
     }
     
     // Enrich error with friendly message
